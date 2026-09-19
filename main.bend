@@ -7,6 +7,8 @@
 # the even rows of its set to one branch and the odd ones to the other,
 # so every leaf gets rows from the whole height and the work stays
 # balanced. The leaves are flat loops; the joins interleave rows back.
+# LAWS.bend states that this tree renders the same rows as a sequential
+# loop, and PROOF.bend proves it: bend PROOF.bend
 import Base
 
 # Config
@@ -475,6 +477,12 @@ def pixel(+x: U32, +y: U32, +ns: U32, +cam: Cam, +scene: Scene) -> U32:
 
 # Render
 # ------
+# The rows to render are a list of row indices, and render forks on that
+# list: the rows at even positions go to one branch, the rows at odd
+# positions to the other, and the join merges them back in order. Every
+# leaf gets rows from the whole height, so the work stays balanced. Being
+# plain list work, the fork tree is something LAWS.bend can state and
+# PROOF.bend can prove: it returns the same rows as the sequential rows().
 
 type Rows is Data:
   RNil{}
@@ -492,17 +500,41 @@ def row(
       +x1 = (x - 1 : U32)
       row(k, x1, y, ns, cam, scene, pixel(x1, y, ns, cam, scene) <> acc)
 
-# the n rows y, y + stride, y + 2 * stride, ...
-def rows(n: Nat, +y: U32, +stride: U32, +ns: U32, +cam: Cam, +scene: Scene) ->
-  Rows:
-  match n:
-    case 0n:
-      RNil{}
-    case 1n+k:
-      RCon{row(U32.to_nat(W()), W(), y, ns, cam, scene, []),
-        rows(k, (y + stride : U32), stride, ns, cam, scene)}
+# the image line y: its first w pixels (w is W() at run time; the laws
+# keep it abstract, so the checker never unrolls a line)
+def line(+w: U32, +y: U32, +ns: U32, +cam: Cam, +scene: Scene) ->
+  List<&2, U32>:
+  row(U32.to_nat(w), w, y, ns, cam, scene, [])
 
-# merges the rows y, y + 2s, .. with the rows y + s, y + 3s, ..
+# the lines ys, one after another: the sequential render
+def rows(ys: List<&2, U32>, +w: U32, +ns: U32, +cam: Cam, +scene: Scene) ->
+  Rows:
+  match ys:
+    case []:
+      RNil{}
+    case y <> t:
+      RCon{line(w, y, ns, cam, scene), rows(t, w, ns, cam, scene)}
+
+# the items at even positions (0, 2, ..) and at odd positions (1, 3, ..)
+def evens(xs: List<&2, U32>) -> List<&2, U32>:
+  match xs:
+    case []:
+      []
+    case x <> []:
+      [x]
+    case x <> y <> t:
+      x <> evens(t)
+
+def odds(xs: List<&2, U32>) -> List<&2, U32>:
+  match xs:
+    case []:
+      []
+    case x <> []:
+      []
+    case x <> y <> t:
+      y <> odds(t)
+
+# merges the rows at even positions with the rows at odd positions
 def interleave(xs: Rows, ys: Rows) -> Rows:
   match xs ys:
     case RCon{x, xt} RCon{y, yt}:
@@ -514,18 +546,26 @@ def interleave(xs: Rows, ys: Rows) -> Rows:
     case RNil{} RNil{}:
       RNil{}
 
-# the rows y, y + stride, .. of the image, forked d levels deep
-def render(d: Nat, +y: U32, +stride: U32, +ns: U32, +cam: Cam, +scene: Scene)
-  -> Rows:
+# the lines ys, forked d levels deep: the parallel render
+def render(
+  d: Nat, +ys: List<&2, U32>, +w: U32, +ns: U32, +cam: Cam, +scene: Scene
+) -> Rows:
   match d:
     case 0n:
-      rows(U32.to_nat(((H() - y + stride - 1) / stride : U32)), y, stride, ns,
-        cam, scene)
+      rows(ys, w, ns, cam, scene)
     case 1n++p:
-      +s2 = (stride * 2 : U32)
-      a b = render(p, y, s2, ns, cam, scene)
-        render(p, (y + stride : U32), s2, ns, cam, scene)
+      a b = render(p, evens(ys), w, ns, cam, scene)
+        render(p, odds(ys), w, ns, cam, scene)
       interleave(a, b)
+
+# the row indices y - n, .., y - 1 onto acc
+def indices(n: Nat, +y: U32, acc: List<&2, U32>) -> List<&2, U32>:
+  match n:
+    case 0n:
+      acc
+    case 1n+k:
+      +y1 = (y - 1 : U32)
+      indices(k, y1, y1 <> acc)
 
 # Image files
 # -----------
@@ -639,7 +679,8 @@ def run(opts: Opts) -> IO(Unit):
     IO.print("rendering " ++ U32.show(W()) ++ "x" ++ U32.show(H()) ++ " at "
       ++ U32.show(ns) ++ " samples per pixel")
     t0 : Nat <- IO.now()
-    save.all(ppm, t0, render(Depth(), 0, 1, ns, cam, scene))
+    save.all(ppm, t0, render(Depth(), indices(U32.to_nat(H()), H(), []), W(),
+      ns, cam, scene))
 
 def main() -> IO(Unit):
   do IO<Unit>:
