@@ -75,6 +75,22 @@ global `world`, whose materials are refs. The fixed branch passes `world` in
 and makes materials plain values. It also spawns one task per horizontal
 line instead of four per pixel.
 
+## Compile time
+
+A full rebuild from source, median of three runs. Nim builds with `-f` and
+an empty cache, and compiles its C with gcc. Bend's time includes its own
+Bun startup and type check.
+
+| Build                                  | Wall time | Compiler peak RAM |
+| -------------------------------------- | --------- | ----------------- |
+| Nim 2.2.12, `-d:release --threads:off` | 2.1 s     | 87 MB             |
+| Nim 2.2.12, `-d:release --threads:on`  | 2.3 s     | 90 MB             |
+| Bend, check and emit C (`-o ray.c`)    | 1.4 s     | 199 MB            |
+| Bend, full build (`-o ray`)            | 3.3 s     | 195 MB            |
+
+Bend spends about 1.4 s checking the program and emitting C, and clang
+takes the other 1.9 s.
+
 ## Binary size
 
 | Executable, stripped   | Size    |
