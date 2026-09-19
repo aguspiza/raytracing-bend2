@@ -49,9 +49,9 @@ about 8 of them busy.
   Bend requires termination. `randInSphere` and `randInDisk` give up after 64
   redraws.
 - **Fixed.** Nim's `cross` had a flipped sign on its y component, which
-  its camera cancelled out. Both are fixed here. The same fix is on a local
-  `fix-threads-and-cross` branch of raytracing-nim, which is not pushed
-  yet.
+  its camera cancelled out. Both are fixed here, and in raytracing-nim on
+  the [`fix-threads-and-cross`](https://github.com/aguspiza/raytracing-nim/tree/fix-threads-and-cross)
+  branch.
 - **Kept on purpose.** `randInSphere` accepts points *outside* the unit
   ball, as in the Nim code, so the image matches the original.
 
