@@ -682,7 +682,15 @@ def run(opts: Opts) -> IO(Unit):
     save.all(ppm, t0, render(Depth(), indices(U32.to_nat(H()), H(), []), W(),
       ns, cam, scene))
 
+# IO.args() starts with the program name, as C's argv[0]
+def drop_prog(args: List<String>) -> List<String>:
+  match args:
+    case []:
+      []
+    case prog <> t:
+      t
+
 def main() -> IO(Unit):
   do IO<Unit>:
     args : List<String> <- IO.args()
-    run(Opts.parse(args))
+    run(Opts.parse(drop_prog(args)))

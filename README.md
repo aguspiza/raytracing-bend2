@@ -15,7 +15,7 @@ bend main.bend -o ray
 ./ray                 # 64 samples per pixel -> ray.tga
 ./ray 16              # 16 samples per pixel
 ./ray 16 ppm          # also write ray.ppm (P3, as with -d:ppm in Nim)
-./ray 16 --threads 8  # cap the worker threads (default: every CPU)
+./ray 16 +RTS --threads 8 -RTS  # cap the worker threads (default: every CPU)
 ```
 
 ## Parallelism
