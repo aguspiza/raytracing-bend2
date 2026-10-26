@@ -10,7 +10,7 @@ Ray tracing in a weekend in [Bend 2](https://github.com/bendlang/bend), ported f
 Bend compiles through clang, so build and run it in WSL or on Linux:
 
 ```
-bend PROOF.bend       # check every law: prints "All terms check."
+bend PROOF.bend       # check every law: prints "ALL PROOFS CHECK"
 bend main.bend -o ray
 ./ray                 # 64 samples per pixel -> ray.tga
 ./ray 16              # 16 samples per pixel
@@ -44,8 +44,8 @@ about 8 of them busy.
 ## Laws and proofs
 
 `LAWS.bend` states what the render guarantees, and `PROOF.bend` proves it.
-`bend PROOF.bend` checks every law in about 0.3 s and prints "All terms
-check."
+`bend PROOF.bend` checks every law in about 0.3 s and prints "ALL PROOFS
+CHECK".
 
 | Law             | Claim                                                   |
 | --------------- | ------------------------------------------------------- |
